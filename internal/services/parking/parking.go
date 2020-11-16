@@ -7,9 +7,9 @@ import (
 type IParkingService interface{
 	CreateParkingLot(capacity uint)(*models.Parking,error)
 	Park(number, color string)(*models.Slot,error)
-	EmptySlot(slotNumber int)(*models.Slot,error)
+	EmptySlot(slotNumber int)(bool,error)
 	GetRegistrationNumbersByColor(color string)([]*models.Car,error)
 	GetSlotNumbersByColor(color string)([]*models.Slot,error)
 	GetSlotByRegistration(number string)(*models.Slot,error)
-	ParkingLotStatus()(*models.Parking,error)
+	ParkingLotStatus()([]*models.Slot,error)
 }

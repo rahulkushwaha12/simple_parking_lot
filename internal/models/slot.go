@@ -6,18 +6,28 @@ type Slot struct{
 }
 
 func (s *Slot) Number() uint {
+	if s==nil{
+		return 0
+	}
 	return s.number
 }
 
 func (s *Slot) Car() *Car {
+	if s==nil{
+		return nil
+	}
 	return s.car
 }
 
 func (s *Slot) SetCar(car *Car) {
-	s.car = car
+	if s!=nil{
+		s.car = car
+	}
 }
 func (s *Slot) RemoveCar() {
-	s.car = nil
+	if s!=nil{
+		s.car = nil
+	}
 }
 
 func NewSlot(number uint) *Slot {

@@ -9,8 +9,8 @@ import (
 
 var(
 	//parking in memory cache
-	parkingCache            *models.Parking
-	pqFreeSlot, pqAllotSlot PriorityQueue
+	parkingCacheData            *models.Parking
+	priorityQueueFreeSlot, priorityQueueAllotSlot PriorityQueue
 )
 type SlotEnum int
 const(
@@ -18,11 +18,16 @@ const(
 	AllotSlot
 )
 type Service struct {
-
+	pqFreeSlot,pqAllotSlot PriorityQueue
+	parkingCache *models.Parking
 }
 
-func NewClient() *Service {
-	return &Service{}
+func NewService() *Service {
+	return &Service{
+		pqFreeSlot: priorityQueueFreeSlot,
+		pqAllotSlot: priorityQueueAllotSlot,
+		parkingCache: parkingCacheData,
+	}
 }
 
 func (s *Service) CreateParkingLot(capacity uint) (*models.Parking, error) {
@@ -51,14 +56,14 @@ func (s *Service) Park(number, color string) (*models.Slot, error) {
 	}
 	slotNumber := heap.Pop(&pqFree).(int)
 	if slotNumber==0{
-		return nil,errors.New("no slot available")
+		return nil,errors.New("Sorry, parking lot is full")
 	}
 	slot,err3 :=p.GetSlotByIndex(slotNumber-1)
 	if err3 != nil{
 		return nil,err3
 	}
 	if slot!= nil{
-		slot.SetCar(models.NewCar(number,color,uint(slotNumber)))
+		slot.SetCar(models.NewCar(number,color))
 		heap.Push(&pqAllot,slotNumber)
 		return slot,nil
 	}
@@ -66,7 +71,7 @@ func (s *Service) Park(number, color string) (*models.Slot, error) {
 
 }
 
-func (s *Service) EmptySlot(slotNumber int) (bool, error) {
+func (s *Service) LeaveSlot(slotNumber int) (bool, error) {
 	p,err1 := s.getCacheParkingData()
 	if err1 != nil{
 		return false,err1
@@ -173,27 +178,27 @@ func (s *Service) ParkingLotStatus() ([]*models.Slot, error) {
 }
 
 func (s *Service)getCacheParkingData()(*models.Parking,error){
-	if parkingCache == nil{
+	if s.parkingCache == nil{
 		return nil,errors.New("parking lot is not initialised, please create a parking lot first")
 	}
-	return parkingCache,nil
+	return s.parkingCache,nil
 }
 func (s *Service)initParkingDataCache(parkingData *models.Parking){
-	parkingCache = parkingData
+	s.parkingCache = parkingData
 }
 
 func (s *Service) getPriorityQueueSlot(se SlotEnum)(PriorityQueue,error){
 	switch se {
 	case FreeSlot:
-		if pqFreeSlot == nil{
+		if s.pqFreeSlot == nil{
 			return nil,errors.New("free slot priority queue is nil")
 		}
-		return pqFreeSlot,nil
+		return s.pqFreeSlot,nil
 	case AllotSlot:
-		if pqAllotSlot == nil{
+		if s.pqAllotSlot == nil{
 			return nil,errors.New("allot slot priority queue is nil")
 		}
-		return pqAllotSlot,nil
+		return s.pqAllotSlot,nil
 	default:
 		return nil, errors.New("invalid priority queue type")
 	}
@@ -202,17 +207,17 @@ func (s *Service) initPriorityQueueSlot(se SlotEnum,parkingData *models.Parking)
 	//create priority queue for empty slots using slot number
 	switch se {
 	case FreeSlot:
-		pqFreeSlot = make(PriorityQueue, len(parkingData.Slots()))
-		for i,s:= range parkingData.Slots(){
-			pqFreeSlot[i] = s.Number()
+		s.pqFreeSlot = make(PriorityQueue, len(parkingData.Slots()))
+		for i,slot:= range parkingData.Slots(){
+			s.pqFreeSlot[i] = slot.Number()
 		}
-		heap.Init(&pqFreeSlot)
+		heap.Init(&s.pqFreeSlot)
 	case AllotSlot:
-		pqAllotSlot = make(PriorityQueue, len(parkingData.Slots()))
-		for i,s:= range parkingData.Slots(){
-			pqAllotSlot[i] = s.Number()
+		s.pqAllotSlot = make(PriorityQueue, len(parkingData.Slots()))
+		for i,slot:= range parkingData.Slots(){
+			s.pqAllotSlot[i] = slot.Number()
 		}
-		heap.Init(&pqAllotSlot)
+		heap.Init(&s.pqAllotSlot)
 	}
 }
 

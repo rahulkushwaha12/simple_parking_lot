@@ -10,6 +10,9 @@ type Parking struct{
 }
 
 func (p *Parking) Slots() []*Slot {
+	if p==nil{
+		return nil
+	}
 	return p.slots
 }
 
@@ -22,10 +25,13 @@ func NewParking(capacity uint) *Parking {
 	return p
 }
 
-func (p *Parking) GetSlotByIndex(index int) (*Slot,error) {
+func (p *Parking) GetSlotByIndex(index uint) (*Slot,error) {
+	if p==nil{
+		return nil,errors.New("parking lot is nil")
+	}
 
-	if index >=0 && len(p.Slots())< index{
-		return p.Slots()[index],nil
+	if index >=0 && index < uint(len(p.Slots())){
+		return p.slots[index],nil
 	}
 	return nil,errors.New("incorrect slot number")
 }

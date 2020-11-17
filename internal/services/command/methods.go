@@ -24,6 +24,9 @@ func NewCreateParkingLot(parking parking.IParkingService) *CreateParkingLot {
 }
 
 func (c *CreateParkingLot) Parse(s string) error {
+	if s==""{
+		return errors.New("invalid command args")
+	}
 	c.args = strings.Split(s," ")
 	if len(c.args) != 1{
 		return errors.New("invalid command args")
@@ -39,9 +42,11 @@ func (c *CreateParkingLot) Parse(s string) error {
 
 func (c *CreateParkingLot) Run() string {
 	if p,err := c.parking.CreateParkingLot(c.capacity);err != nil{
-		return "", err
+		return err.Error()
+	}else if p==nil {
+		return "unable to create parking lot"
 	}else{
-		return fmt.Sprintf("Created a parking lot with %d slots", len(p.Slots())),nil
+		return fmt.Sprintf("Created a parking lot with %d slots", len(p.Slots()))
 	}
 }
 
@@ -50,13 +55,16 @@ type Park struct{
 	color,number string
 }
 
-func NewPark(parking parking.IParkingService) *CreateParkingLot {
-	return &CreateParkingLot{
+func NewPark(parking parking.IParkingService) *Park {
+	return &Park{
 		common:   common{parking: parking},
 	}
 }
 
 func (c *Park) Parse(s string) error {
+	if s==""{
+		return errors.New("invalid command args")
+	}
 	c.args = strings.Split(s," ")
 	if len(c.args) != 2{
 		return errors.New("invalid command args")
@@ -80,13 +88,16 @@ type Leave struct{
 	slotNumber uint
 }
 
-func NewLeave(parking parking.IParkingService) *CreateParkingLot {
-	return &CreateParkingLot{
+func NewLeave(parking parking.IParkingService) *Leave {
+	return &Leave{
 		common:   common{parking: parking},
 	}
 }
 
 func (c *Leave) Parse(s string) error {
+	if s==""{
+		return errors.New("invalid command args")
+	}
 	c.args = strings.Split(s," ")
 	if len(c.args) != 1{
 		return errors.New("invalid command args")
@@ -100,7 +111,7 @@ func (c *Leave) Parse(s string) error {
 }
 
 func (c *Leave) Run() string {
-	if slot,err := c.parking.LeaveSlot(int(c.slotNumber));err != nil{
+	if slot,err := c.parking.LeaveSlot(c.slotNumber);err != nil{
 		return err.Error()
 	}else if !slot {
 		return "unable to leave this slot"
@@ -114,13 +125,16 @@ type RegNumberByColor struct{
 	color string
 }
 
-func NewRegNumberByColor(parking parking.IParkingService) *CreateParkingLot {
-	return &CreateParkingLot{
+func NewRegNumberByColor(parking parking.IParkingService) *RegNumberByColor {
+	return &RegNumberByColor{
 		common:   common{parking: parking},
 	}
 }
 
 func (c *RegNumberByColor) Parse(s string) error {
+	if s==""{
+		return errors.New("invalid command args")
+	}
 	c.args = strings.Split(s," ")
 	if len(c.args) != 1{
 		return errors.New("invalid command args")
@@ -148,13 +162,16 @@ type SlotNumberByColor struct{
 	color string
 }
 
-func NewSlotNumberByColor(parking parking.IParkingService) *CreateParkingLot {
-	return &CreateParkingLot{
+func NewSlotNumberByColor(parking parking.IParkingService) *SlotNumberByColor {
+	return &SlotNumberByColor{
 		common:   common{parking: parking},
 	}
 }
 
 func (c *SlotNumberByColor) Parse(s string) error {
+	if s==""{
+		return errors.New("invalid command args")
+	}
 	c.args = strings.Split(s," ")
 	if len(c.args) != 1{
 		return errors.New("invalid command args")
@@ -182,13 +199,16 @@ type SlotByRegNumber struct{
 	number string
 }
 
-func NewSlotByRegNumber(parking parking.IParkingService) *CreateParkingLot {
-	return &CreateParkingLot{
+func NewSlotByRegNumber(parking parking.IParkingService) *SlotByRegNumber {
+	return &SlotByRegNumber{
 		common:   common{parking: parking},
 	}
 }
 
 func (c *SlotByRegNumber) Parse(s string) error {
+	if s==""{
+		return errors.New("invalid command args")
+	}
 	c.args = strings.Split(s," ")
 	if len(c.args) != 1{
 		return errors.New("invalid command args")
@@ -211,15 +231,14 @@ type Status struct{
 	common
 }
 
-func NewStatus(parking parking.IParkingService) *CreateParkingLot {
-	return &CreateParkingLot{
+func NewStatus(parking parking.IParkingService) *Status {
+	return &Status{
 		common:   common{parking: parking},
 	}
 }
 
 func (c *Status) Parse(s string) error {
-	c.args = strings.Split(s," ")
-	if len(c.args) != 0{
+	if s != ""{
 		return errors.New("invalid command args")
 	}
 	return nil
@@ -232,9 +251,9 @@ func (c *Status) Run() string {
 		return "Parking lot is empty"
 	}else{
 		var str strings.Builder
-		str.WriteString("Slot No. Registration No Color")
+		str.WriteString("Slot No. Registration No Color\n")
 		for _,s:=range slots{
-			str.WriteString(fmt.Sprintf("%d   ,%s  ,%s",s.Number(),s.Car().Number(),s.Car().Color()))
+			str.WriteString(fmt.Sprintf("%d      %s       %s\n",s.Number(),s.Car().Number(),s.Car().Color()))
 		}
 		return str.String()
 	}

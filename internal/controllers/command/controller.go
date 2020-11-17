@@ -26,12 +26,16 @@ func NewController(parking parking.IParkingService) *Controller {
 
 
 func (c *Controller)Execute(input string)string{
+	var str string
 	cmdList := strings.SplitN(input," ",2)
 	if cmd,exists:= c.commands[cmdList[0]];exists{
-		if err:= cmd.Parse(cmdList[1]);err!=nil{
+		if len(cmdList)==2{
+			str = cmdList[1]
+		}
+		if err:= cmd.Parse(str);err!=nil{
 			return err.Error()
 		}
-		cmd.Run()
+		return cmd.Run()
 	}else{
 		return "Command not found"
 	}

@@ -14,7 +14,7 @@ func (p *PriorityQueue) Pop() interface{} {
 	return old
 }
 
-func(p PriorityQueue)Len()int{return p.Len()}
+func(p PriorityQueue)Len()int{return len(p)}
 func(p PriorityQueue)Less(i,j int)bool{return p[i]<p[j]}
 func(p PriorityQueue)Swap(i,j int){p[i],p[j] = p[j],p[i]}
 

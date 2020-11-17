@@ -10,7 +10,7 @@ import (
 var(
 	//parking in memory cache
 	parkingCacheData            *models.Parking
-	priorityQueueFreeSlot, priorityQueueAllotSlot PriorityQueue
+	priorityQueueFreeSlot, priorityQueueAllotSlot *PriorityQueue
 )
 type SlotEnum int
 const(
@@ -18,7 +18,7 @@ const(
 	AllotSlot
 )
 type Service struct {
-	pqFreeSlot,pqAllotSlot PriorityQueue
+	pqFreeSlot,pqAllotSlot *PriorityQueue
 	parkingCache *models.Parking
 }
 
@@ -54,7 +54,10 @@ func (s *Service) Park(number, color string) (*models.Slot, error) {
 	if err4 != nil{
 		return nil,err4
 	}
-	slotNumber := heap.Pop(&pqFree).(int)
+	if pqFree.Len()==0{
+		return nil,errors.New("Sorry, parking lot is full")
+	}
+	slotNumber := heap.Pop(pqFree).(uint)
 	if slotNumber==0{
 		return nil,errors.New("Sorry, parking lot is full")
 	}
@@ -64,14 +67,14 @@ func (s *Service) Park(number, color string) (*models.Slot, error) {
 	}
 	if slot!= nil{
 		slot.SetCar(models.NewCar(number,color))
-		heap.Push(&pqAllot,slotNumber)
+		heap.Push(pqAllot,slotNumber)
 		return slot,nil
 	}
 	return nil,errors.New("slot is nil")
 
 }
 
-func (s *Service) LeaveSlot(slotNumber int) (bool, error) {
+func (s *Service) LeaveSlot(slotNumber uint) (bool, error) {
 	p,err1 := s.getCacheParkingData()
 	if err1 != nil{
 		return false,err1
@@ -91,8 +94,17 @@ func (s *Service) LeaveSlot(slotNumber int) (bool, error) {
 		if err4 != nil{
 			return false,err4
 		}
-		heap.Push(&pqFree,slotNumber)
-		heap.Remove(&pqAllot,slotNumber)
+		heap.Push(pqFree,slotNumber)
+		//remove from allotted pq
+		l:=len(*pqAllot)
+		for i,ele := range *pqAllot{
+			if ele == slotNumber{
+				(*pqAllot)[i],(*pqAllot)[l-1] = (*pqAllot)[l-1],(*pqAllot)[i]
+				*pqAllot = (*pqAllot)[:l-1]
+				break
+			}
+		}
+		heap.Init(pqAllot)
 		return true,nil
 	}
 	return true,nil
@@ -108,8 +120,8 @@ func (s *Service) GetRegistrationNumbersByColor(color string) ([]*models.Car, er
 	if err2 != nil{
 		return nil,err2
 	}
-	for _,slotNumber := range pqAllot{
-		if slot ,err := p.GetSlotByIndex(int(slotNumber)-1);err==nil{
+	for _,slotNumber := range *pqAllot{
+		if slot ,err := p.GetSlotByIndex(slotNumber-1);err==nil{
 			if car :=slot.Car();car.Color()==color{
 				res = append(res, car)
 			}
@@ -128,8 +140,8 @@ func (s *Service) GetSlotNumbersByColor(color string) ([]*models.Slot, error) {
 	if err2 != nil{
 		return nil,err2
 	}
-	for _,slotNumber := range pqAllot{
-		if slot ,err := p.GetSlotByIndex(int(slotNumber)-1);err==nil && slot != nil{
+	for _,slotNumber := range *pqAllot{
+		if slot ,err := p.GetSlotByIndex(slotNumber-1);err==nil && slot != nil{
 			if car :=slot.Car();car.Color()==color{
 				res = append(res, slot)
 			}
@@ -148,8 +160,8 @@ func (s *Service) GetSlotByRegistration(number string) (*models.Slot, error) {
 	if err2 != nil{
 		return nil,err2
 	}
-	for _,slotNumber := range pqAllot{
-		if slot ,err := p.GetSlotByIndex(int(slotNumber)-1);err==nil && slot != nil{
+	for _,slotNumber := range *pqAllot{
+		if slot ,err := p.GetSlotByIndex(slotNumber-1);err==nil && slot != nil{
 			if car :=slot.Car();car.Number()==number{
 				res =  slot
 				break
@@ -169,8 +181,8 @@ func (s *Service) ParkingLotStatus() ([]*models.Slot, error) {
 	if err2 != nil{
 		return nil,err2
 	}
-	for _,slotNumber := range pqAllot{
-		if slot ,err := p.GetSlotByIndex(int(slotNumber)-1);err==nil && slot != nil&& slot.Car()!= nil{
+	for _,slotNumber := range *pqAllot{
+		if slot ,err := p.GetSlotByIndex(slotNumber-1);err==nil && slot != nil&& slot.Car()!= nil{
 				res = append(res, slot)
 		}
 	}
@@ -187,7 +199,7 @@ func (s *Service)initParkingDataCache(parkingData *models.Parking){
 	s.parkingCache = parkingData
 }
 
-func (s *Service) getPriorityQueueSlot(se SlotEnum)(PriorityQueue,error){
+func (s *Service) getPriorityQueueSlot(se SlotEnum)(*PriorityQueue,error){
 	switch se {
 	case FreeSlot:
 		if s.pqFreeSlot == nil{
@@ -207,17 +219,16 @@ func (s *Service) initPriorityQueueSlot(se SlotEnum,parkingData *models.Parking)
 	//create priority queue for empty slots using slot number
 	switch se {
 	case FreeSlot:
-		s.pqFreeSlot = make(PriorityQueue, len(parkingData.Slots()))
-		for i,slot:= range parkingData.Slots(){
-			s.pqFreeSlot[i] = slot.Number()
+		pq := make(PriorityQueue, len(s.parkingCache.Slots()))
+		s.pqFreeSlot = &pq
+		for i,slot:= range s.parkingCache.Slots(){
+			(*s.pqFreeSlot)[i] = slot.Number()
 		}
-		heap.Init(&s.pqFreeSlot)
+		heap.Init(s.pqFreeSlot)
 	case AllotSlot:
-		s.pqAllotSlot = make(PriorityQueue, len(parkingData.Slots()))
-		for i,slot:= range parkingData.Slots(){
-			s.pqAllotSlot[i] = slot.Number()
-		}
-		heap.Init(&s.pqAllotSlot)
+		pq := make(PriorityQueue, 0)
+		s.pqAllotSlot = &pq
+		heap.Init(s.pqAllotSlot)
 	}
 }
 

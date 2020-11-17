@@ -11,23 +11,23 @@ import (
 	"github.com/rahulkushwaha12/simple_parking_lot/internal/services/parking"
 )
 
-func main(){
+func main() {
 	controller := command.NewController(parking.NewService())
-	if len(os.Args)>1 && os.Args[1] != ""{
+	if len(os.Args) > 1 && os.Args[1] != "" {
 		cmdFile, err := os.Open(os.Args[1])
-		if err != nil{
+		if err != nil {
 			log.Fatal(err)
 		}
 		defer cmdFile.Close()
 		cmdScanner := bufio.NewScanner(cmdFile)
-		for cmdScanner.Scan(){
-			if err := cmdScanner.Err(); err != nil{
+		for cmdScanner.Scan() {
+			if err := cmdScanner.Err(); err != nil {
 				log.Fatal(err)
 			}
 			cmdInput := cmdScanner.Text()
-			cmdInput = strings.TrimRight(cmdInput,"\n")
-			if cmdInput != ""{
-				if cmdInput=="exit"{
+			cmdInput = strings.TrimRight(cmdInput, "\n")
+			if cmdInput != "" {
+				if cmdInput == "exit" {
 					os.Exit(1)
 				}
 				fmt.Println(controller.Execute(cmdInput))
@@ -36,11 +36,11 @@ func main(){
 	}
 
 	reader := bufio.NewReader(os.Stdin)
-	for{
-		cmdInput,_:=reader.ReadString('\n')
-		cmdInput = strings.TrimRight(cmdInput,"\n")
-		if cmdInput != ""{
-			if cmdInput=="exit"{
+	for {
+		cmdInput, _ := reader.ReadString('\n')
+		cmdInput = strings.TrimRight(cmdInput, "\n")
+		if cmdInput != "" {
+			if cmdInput == "exit" {
 				os.Exit(1)
 			}
 			fmt.Println(controller.Execute(cmdInput))

@@ -1,31 +1,31 @@
 package models
 
-type Slot struct{
-	car *Car
+type Slot struct {
+	car    *Car
 	number uint
 }
 
 func (s *Slot) Number() uint {
-	if s==nil{
+	if s == nil {
 		return 0
 	}
 	return s.number
 }
 
 func (s *Slot) Car() *Car {
-	if s==nil{
+	if s == nil {
 		return nil
 	}
 	return s.car
 }
 
 func (s *Slot) SetCar(car *Car) {
-	if s!=nil{
+	if s != nil {
 		s.car = car
 	}
 }
 func (s *Slot) RemoveCar() {
-	if s!=nil{
+	if s != nil {
 		s.car = nil
 	}
 }
